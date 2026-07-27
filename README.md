@@ -10,6 +10,12 @@
 
 ---
 
+## Demo
+
+<video src="preview%20MP4/live.mp4" controls muted playsinline></video>
+
+---
+
 ## O que é
 
 Ferramenta client-side para criar orçamentos formais com a estética de **"caderno técnico"**. Preenche o formulário, vê o preview em tempo real e exporta um PDF vetorial pronto a enviar ao cliente.
