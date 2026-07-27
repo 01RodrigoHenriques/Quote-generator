@@ -3,12 +3,25 @@ import type { Orcamento } from '../types/orcamento';
 const STORAGE_KEY = 'orcamentos';
 
 function getStorage(): Orcamento[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch {
+    // localStorage corrupto ou inacessível
+    return [];
+  }
 }
 
 function setStorage(orcamentos: Orcamento[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orcamentos));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orcamentos));
+  } catch {
+    // localStorage cheio ou inacessível — silently fail
+    console.warn('Falha ao guardar orçamento no localStorage');
+  }
 }
 
 export function guardarOrcamento(orcamento: Orcamento): void {
