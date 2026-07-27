@@ -12,7 +12,7 @@
 
 ## O que é
 
-Ferramenta client-side para criar orçamentos formais com a estética de **"caderno de obra técnico"**. Preenche o formulário, vê o preview em tempo real e exporta um PDF vetorial pronto a enviar ao cliente.
+Ferramenta client-side para criar orçamentos formais com a estética de **"caderno técnico"**. Preenche o formulário, vê o preview em tempo real e exporta um PDF vetorial pronto a enviar ao cliente.
 
 - **Zero backend** — tudo corre no browser
 - **Persistência local** — os orçamentos ficam guardados em `localStorage`
