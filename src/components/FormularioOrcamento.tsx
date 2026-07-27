@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import type { Orcamento, ItemOrcamento, DadosEmpresa, DadosCliente } from '../types/orcamento';
-import { validarNIF, validarEmail, validarCampoObrigatorio } from '../utils/validacoes';
+import { validarNIF } from '../utils/validacoes';
 
 interface FormularioOrcamentoProps {
   orcamento: Orcamento;
@@ -88,18 +88,6 @@ function EmpresaSection({
     },
     [empresa, onChange]
   );
-
-  const validateNIF = (val: string) => {
-    const err = validarNIF(val);
-    if (err) onChange({ ...empresa, nif: val });
-    return err;
-  };
-
-  const validateEmail = (val: string) => {
-    const err = validarEmail(val);
-    if (err) onChange({ ...empresa, email: val });
-    return err;
-  };
 
   return (
     <section className="mb-8">

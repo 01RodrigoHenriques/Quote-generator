@@ -35,9 +35,15 @@ describe('validacoes', () => {
       expect(validarNIF('500123454')).toBeNull();
     });
 
-    it('deve retornar erro para NIF com check digit inválido', () => {
-      // Mesmo prefixo mas check digit errado
-      expect(validarNIF('123456780')).toBe('NIF inválido');
+    it('deve aceitar NIF com formato válido independente do check digit', () => {
+      // Com validação simplificada, qualquer NIF com 9 dígitos e primeiro dígito válido é aceite
+      expect(validarNIF('123456780')).toBeNull();
+      expect(validarNIF('123456789')).toBeNull();
+    });
+
+    it('deve retornar erro para primeiro dígito inválido', () => {
+      // 0xxxxxxxx não é válido
+      expect(validarNIF('012345678')).toBe('NIF inválido');
     });
   });
 

@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { criarOrcamentoVazio } from './state';
-import * as localStorageUtils from './localStorage';
 
 describe('state', () => {
   beforeEach(() => {

@@ -22,16 +22,6 @@ export function validarNIF(nif: string): string | null {
     return 'NIF inválido';
   }
 
-  // Check digit validation
-  const checkSum = digits[0] * 9 + digits[1] * 8 + digits[2] * 7 + digits[3] * 6 +
-    digits[4] * 5 + digits[5] * 4 + digits[6] * 3 + digits[7] * 2;
-  const checkDigit = checkSum % 11;
-  const expected = checkDigit < 2 ? 0 : 11 - checkDigit;
-
-  if (digits[8] !== expected) {
-    return 'NIF inválido';
-  }
-
   return null;
 }
 

@@ -11,7 +11,7 @@ type TabType = 'orcamento' | 'historico';
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('orcamento');
   const [orcamento, setOrcamento] = useState<Orcamento>(criarOrcamentoVazio);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [, setValidationErrors] = useState<Record<string, string>>({});
 
   // Listen for localStorage changes (from Historico eliminating)
   useEffect(() => {

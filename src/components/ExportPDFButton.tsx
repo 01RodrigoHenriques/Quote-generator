@@ -61,13 +61,13 @@ export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButt
 
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       let y = MARGIN; // current vertical position
-      let pageNum = 1;
+      let _pageNum = 1;
 
       // ---- Helper: check if we need a new page ----
       const ensureSpace = (needed: number) => {
         if (y + needed > PAGE_H - MARGIN) {
           pdf.addPage();
-          pageNum++;
+          _pageNum++;
           y = MARGIN;
         }
       };
