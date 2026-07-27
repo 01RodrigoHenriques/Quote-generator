@@ -1,11 +1,10 @@
 import React, { useCallback } from 'react';
 import type { Orcamento, ItemOrcamento, DadosEmpresa, DadosCliente } from '../types/orcamento';
-import { validarNIF } from '../utils/validacoes';
+import { validarNIF, validarEmail } from '../utils/validacoes';
 
 interface FormularioOrcamentoProps {
   orcamento: Orcamento;
   onChange: (orcamento: Orcamento) => void;
-  onValidate?: (erros: Record<string, string>) => void;
 }
 
 function SectionNumber({ num }: { num: string }) {
@@ -20,20 +19,18 @@ function InputField({
   label,
   value,
   onChange,
-  onBlur,
   error,
   type = 'text',
   placeholder = '',
-  validate,
+  onValidate,
 }: {
   label: string;
   value: string | number;
   onChange: (val: string) => void;
-  onBlur?: () => void;
   error?: string;
   type?: string;
   placeholder?: string;
-  validate?: (val: string) => string | null;
+  onValidate?: (val: string) => void;
 }) {
   const hasError = !!error;
 
@@ -46,19 +43,9 @@ function InputField({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onBlur={() => {
-          onBlur?.();
-          if (validate && typeof value === 'string') {
-            validate(value);
-          }
-        }}
+        onBlur={() => onValidate?.(typeof value === 'string' ? value : '')}
         placeholder={placeholder}
-        className={`
-          w-full bg-transparent border-b-2 outline-none py-1 text-ink font-sans transition-colors duration-200
-          ${hasError
-            ? 'border-stamp focus:border-stamp'
-            : 'border-guide/40 focus:border-blueprint'}
-        `}
+        className={`w-full bg-transparent border-b-2 outline-none py-1 text-ink font-sans transition-colors duration-200 ${hasError ? 'border-stamp focus:border-stamp' : 'border-guide/40 focus:border-blueprint'}`}
       />
       {hasError && (
         <p className="text-xs text-stamp font-mono mt-1" role="alert">{error}</p>
@@ -71,10 +58,12 @@ function EmpresaSection({
   empresa,
   onChange,
   erros = {},
+  onValidate,
 }: {
   empresa: DadosEmpresa;
   onChange: (empresa: DadosEmpresa) => void;
   erros?: Record<string, string>;
+  onValidate?: (field: string, value: string) => void;
 }) {
   const handleLogoUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +91,7 @@ function EmpresaSection({
           onChange={(val) => onChange({ ...empresa, nome: val })}
           placeholder="Ex: Construções Silva, Lda."
           error={erros['empresa.nome']}
+          onValidate={(val) => onValidate?.('empresa.nome', val)}
         />
         <InputField
           label="NIF"
@@ -109,11 +99,7 @@ function EmpresaSection({
           onChange={(val) => onChange({ ...empresa, nif: val })}
           placeholder="Ex: 501234567"
           error={erros['empresa.nif']}
-          validate={(val) => {
-            const err = validarNIF(val);
-            if (err) onChange({ ...empresa, nif: val });
-            return err;
-          }}
+          onValidate={(val) => onValidate?.('empresa.nif', val)}
         />
         <InputField
           label="Morada"
@@ -133,6 +119,7 @@ function EmpresaSection({
           onChange={(val) => onChange({ ...empresa, email: val })}
           placeholder="Ex: geral@construcoes-silva.pt"
           error={erros['empresa.email']}
+          onValidate={(val) => onValidate?.('empresa.email', val)}
         />
         <div className="mb-4">
           <label className="block text-xs font-mono uppercase tracking-wider text-guide mb-1">
@@ -168,10 +155,12 @@ function ClienteSection({
   cliente,
   onChange,
   erros = {},
+  onValidate,
 }: {
   cliente: DadosCliente;
   onChange: (cliente: DadosCliente) => void;
   erros?: Record<string, string>;
+  onValidate?: (field: string, value: string) => void;
 }) {
   return (
     <section className="mb-8">
@@ -186,6 +175,7 @@ function ClienteSection({
           onChange={(val) => onChange({ ...cliente, nome: val })}
           placeholder="Ex: João Santos"
           error={erros['cliente.nome']}
+          onValidate={(val) => onValidate?.('cliente.nome', val)}
         />
         <InputField
           label="NIF"
@@ -193,6 +183,7 @@ function ClienteSection({
           onChange={(val) => onChange({ ...cliente, nif: val })}
           placeholder="Ex: 123456789"
           error={erros['cliente.nif']}
+          onValidate={(val) => onValidate?.('cliente.nif', val)}
         />
         <InputField
           label="Morada"
@@ -206,6 +197,7 @@ function ClienteSection({
           onChange={(val) => onChange({ ...cliente, email: val })}
           placeholder="Ex: joao.santos@email.pt"
           error={erros['cliente.email']}
+          onValidate={(val) => onValidate?.('cliente.email', val)}
         />
       </div>
     </section>
@@ -266,7 +258,6 @@ function ItensSection({
         <p className="text-xs text-stamp font-mono mb-3" role="alert">{erros['itens']}</p>
       )}
 
-      {/* Table header */}
       <div className="hidden md:grid grid-cols-12 gap-2 pb-2 border-b-2 border-guide/40 font-mono text-xs uppercase tracking-wider text-guide">
         <div className="col-span-5">Descrição</div>
         <div className="col-span-2 text-right">Quantidade</div>
@@ -275,7 +266,6 @@ function ItensSection({
         <div className="col-span-1"></div>
       </div>
 
-      {/* Rows */}
       {itens.map((item, idx) => {
         const subtotal = item.quantidade * item.precoUnitario;
         const descError = erros[`item-${idx}-descricao`];
@@ -287,7 +277,6 @@ function ItensSection({
             key={item.id}
             className="grid grid-cols-1 md:grid-cols-12 gap-2 py-3 border-b border-guide/20 items-center"
           >
-            {/* Description - full width on mobile */}
             <div className="md:col-span-5 mb-2 md:mb-0">
               <span className="md:hidden text-xs font-mono text-guide uppercase tracking-wider block mb-1">
                 Descrição
@@ -297,10 +286,7 @@ function ItensSection({
                 value={item.descricao}
                 onChange={(e) => updateItem(item.id, 'descricao', e.target.value)}
                 placeholder="Ex: Fornecimento e instalação de..."
-                className={`
-                  w-full bg-transparent border-b outline-none py-1 text-ink font-sans transition-colors duration-200
-                  ${descError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}
-                `}
+                className={`w-full bg-transparent border-b outline-none py-1 text-ink font-sans transition-colors duration-200 ${descError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}`}
               />
               {descError && (
                 <p className="text-xs text-stamp font-mono mt-1" role="alert">{descError}</p>
@@ -315,13 +301,8 @@ function ItensSection({
                 min="0"
                 step="1"
                 value={item.quantidade}
-                onChange={(e) =>
-                  updateItem(item.id, 'quantidade', parseFloat(e.target.value) || 0)
-                }
-                className={`
-                  w-full bg-transparent border-b outline-none py-1 text-ink font-mono text-right transition-colors duration-200
-                  ${qtdError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}
-                `}
+                onChange={(e) => updateItem(item.id, 'quantidade', parseFloat(e.target.value) || 0)}
+                className={`w-full bg-transparent border-b outline-none py-1 text-ink font-mono text-right transition-colors duration-200 ${qtdError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}`}
               />
               {qtdError && (
                 <p className="text-xs text-stamp font-mono mt-1" role="alert">{qtdError}</p>
@@ -336,13 +317,8 @@ function ItensSection({
                 min="0"
                 step="0.01"
                 value={item.precoUnitario}
-                onChange={(e) =>
-                  updateItem(item.id, 'precoUnitario', parseFloat(e.target.value) || 0)
-                }
-                className={`
-                  w-full bg-transparent border-b outline-none py-1 text-ink font-mono text-right transition-colors duration-200
-                  ${precoError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}
-                `}
+                onChange={(e) => updateItem(item.id, 'precoUnitario', parseFloat(e.target.value) || 0)}
+                className={`w-full bg-transparent border-b outline-none py-1 text-ink font-mono text-right transition-colors duration-200 ${precoError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}`}
               />
               {precoError && (
                 <p className="text-xs text-stamp font-mono mt-1" role="alert">{precoError}</p>
@@ -373,7 +349,6 @@ function ItensSection({
         </p>
       )}
 
-      {/* Add item button - text style */}
       <button
         onClick={addItem}
         className="mt-4 text-blueprint font-mono text-sm underline underline-offset-4 hover:text-ink transition-colors duration-200"
@@ -381,7 +356,6 @@ function ItensSection({
         + Adicionar item
       </button>
 
-      {/* Custo de materiais + Margem */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t-2 border-guide/40">
         <div>
           <label className="block text-xs font-mono uppercase tracking-wider text-guide mb-1">
@@ -392,9 +366,7 @@ function ItensSection({
             min="0"
             step="0.01"
             value={custoMateriais || ''}
-            onChange={(e) =>
-              onCustoMateriaisChange(parseFloat(e.target.value) || 0)
-            }
+            onChange={(e) => onCustoMateriaisChange(parseFloat(e.target.value) || 0)}
             className="w-full bg-transparent border-b-2 border-guide/40 focus:border-blueprint outline-none py-1 text-ink font-mono transition-colors duration-200"
           />
         </div>
@@ -417,56 +389,6 @@ function ItensSection({
   );
 }
 
-export default function FormularioOrcamento({ orcamento, onChange, onValidate }: FormularioOrcamentoProps) {
-  const handleValidate = useCallback(() => {
-    const { validarOrcamento } = require('../utils/validacoes');
-    const result = validarOrcamento(
-      orcamento.empresa,
-      orcamento.cliente,
-      orcamento.itens
-    );
-    onChange({ ...orcamento, erros: result.errors });
-    onValidate?.(result.errors);
-  }, [orcamento, onChange, onValidate]);
-
-  return (
-    <div>
-      <EmpresaSection
-        empresa={orcamento.empresa}
-        onChange={(empresa) => onChange({ ...orcamento, empresa })}
-        erros={orcamento.erros}
-      />
-      <ClienteSection
-        cliente={orcamento.cliente}
-        onChange={(cliente) => onChange({ ...orcamento, cliente })}
-        erros={orcamento.erros}
-      />
-      <ItensSection
-        itens={orcamento.itens}
-        custoMateriais={orcamento.custoMateriais}
-        margemPercentagem={orcamento.margemPercentagem}
-        onItensChange={(itens) => onChange({ ...orcamento, itens })}
-        onCustoMateriaisChange={(val) => onChange({ ...orcamento, custoMateriais: val })}
-        onMargemChange={(val) => onChange({ ...orcamento, margemPercentagem: val })}
-        erros={orcamento.erros}
-      />
-      <NotasSection
-        notas={orcamento.notas || ''}
-        onChange={(notas) => onChange({ ...orcamento, notas })}
-      />
-      {/* Validation trigger */}
-      <div className="mb-4">
-        <button
-          onClick={handleValidate}
-          className="text-blueprint font-mono text-sm underline underline-offset-4 hover:text-ink transition-colors duration-200"
-        >
-          ✓ Validar formulário
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function NotasSection({ notas, onChange }: { notas: string; onChange: (val: string) => void }) {
   return (
     <section className="mb-8">
@@ -482,5 +404,58 @@ function NotasSection({ notas, onChange }: { notas: string; onChange: (val: stri
         className="w-full bg-transparent border-b-2 border-guide/40 focus:border-blueprint outline-none py-2 text-ink font-sans transition-colors duration-200 resize-none"
       />
     </section>
+  );
+}
+
+export default function FormularioOrcamento({ orcamento, onChange }: FormularioOrcamentoProps) {
+  const handleFieldValidate = useCallback(
+    (field: string, value: string) => {
+      let error: string | null = null;
+      if (field.endsWith('.nome')) {
+        error = !value.trim() ? field.includes('empresa') ? 'Nome da empresa é obrigatório' : 'Nome do cliente é obrigatório' : null;
+      } else if (field.endsWith('.nif')) {
+        error = validarNIF(value);
+      } else if (field.endsWith('.email')) {
+        error = validarEmail(value);
+      }
+      if (error) {
+        onChange({ ...orcamento, erros: { ...orcamento.erros, [field]: error } });
+      } else {
+        const newErrors = { ...orcamento.erros };
+        delete newErrors[field];
+        onChange({ ...orcamento, erros: newErrors });
+      }
+    },
+    [orcamento, onChange]
+  );
+
+  return (
+    <div>
+      <EmpresaSection
+        empresa={orcamento.empresa}
+        onChange={(empresa) => onChange({ ...orcamento, empresa })}
+        erros={orcamento.erros}
+        onValidate={handleFieldValidate}
+      />
+      <ClienteSection
+        cliente={orcamento.cliente}
+        onChange={(cliente) => onChange({ ...orcamento, cliente })}
+        erros={orcamento.erros}
+        onValidate={handleFieldValidate}
+      />
+      <ItensSection
+        itens={orcamento.itens}
+        custoMateriais={orcamento.custoMateriais}
+        margemPercentagem={orcamento.margemPercentagem}
+        onItensChange={(itens) => onChange({ ...orcamento, itens })}
+        onCustoMateriaisChange={(val) => onChange({ ...orcamento, custoMateriais: val })}
+        onMargemChange={(val) => onChange({ ...orcamento, margemPercentagem: val })}
+        erros={orcamento.erros}
+      />
+      <NotasSection
+        notas={orcamento.notas || ''}
+        onChange={(notas) => onChange({ ...orcamento, notas })}
+      />
+    </div>
   );
 }

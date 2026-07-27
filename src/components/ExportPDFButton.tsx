@@ -7,7 +7,6 @@ import { validarOrcamento } from '../utils/validacoes';
 
 interface ExportPDFButtonProps {
   orcamento: Orcamento;
-  onValidate?: (erros: Record<string, string>) => void;
 }
 
 // A4 dimensions in mm
@@ -40,7 +39,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButtonProps) {
+export default function ExportPDFButton({ orcamento }: ExportPDFButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const validationResult = validarOrcamento(
@@ -51,23 +50,18 @@ export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButt
   const isValid = validationResult.isValid;
 
   const handleExport = async () => {
-    if (!isValid) {
-      onValidate?.(validationResult.errors);
-      return;
-    }
+    if (!isValid) return;
     setLoading(true);
     try {
       guardarOrcamento(orcamento);
 
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       let y = MARGIN; // current vertical position
-      let _pageNum = 1;
 
       // ---- Helper: check if we need a new page ----
       const ensureSpace = (needed: number) => {
         if (y + needed > PAGE_H - MARGIN) {
           pdf.addPage();
-          _pageNum++;
           y = MARGIN;
         }
       };
@@ -100,7 +94,7 @@ export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButt
       ensureSpace(headerH);
 
       // Company name (mono, bold)
-      text(orcamento.empresa.nome || 'Empresa', MARGIN, y + 6, SIZE_LG, FONT_MONO, true);
+      text(orcamento.empresa.nome || 'Nome da Empresa', MARGIN, y + 6, SIZE_LG, FONT_MONO, true);
       y += 10;
 
       // Company details
@@ -170,10 +164,10 @@ export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButt
       pdf.line(MARGIN, y, PAGE_W - MARGIN, y);
       y += 5;
       text('#', MARGIN + 2, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
-      text('DESCRIÇÃO', MARGIN + 8, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
-      text('QTD.', colNumX, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
-      text('PREÇO UNIT.', colPriceX, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
-      text('SUBTOTAL', colTotalX, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
+      text('Descrição', MARGIN + 8, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
+      text('Qtd.', colNumX, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
+      text('Preço Unit.', colPriceX, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
+      text('Subtotal', colTotalX, y, SIZE_XS, FONT_MONO, false, C_GUIDE);
       y += 4;
       pdf.setLineWidth(0.3);
       pdf.line(MARGIN, y, PAGE_W - MARGIN, y);
@@ -192,11 +186,13 @@ export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButt
         // Check if we need a new page BEFORE drawing the row
         if (y + totalItemH > PAGE_H - MARGIN) {
           pdf.addPage();
-          pageNum++;
           y = MARGIN;
         }
 
-        text(`${idx + 1}`, MARGIN + 2, y + 4, SIZE_SM, FONT_MONO);
+        pdf.setFontSize(SIZE_SM);
+        pdf.setFont(FONT_MONO, 'normal');
+        pdf.setTextColor(C_GUIDE[0], C_GUIDE[1], C_GUIDE[2]);
+        pdf.text(`${idx + 1}`, colNumX + colNumW - 2, y + 4, { align: 'right' });
         pdf.setFontSize(SIZE_SM);
         pdf.setFont(FONT_BODY, 'normal');
         pdf.setTextColor(C_INK[0], C_INK[1], C_INK[2]);
@@ -291,10 +287,10 @@ export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButt
         pdf.setFont(FONT_BODY, 'normal');
         pdf.setTextColor(C_INK[0], C_INK[1], C_INK[2]);
         // Split notes by line and render each with a simple indent
-        const noteLines = orcamento.notas.split('\n').filter(l => l.trim());
+        const noteLines = orcamento.notas.split('\n');
         noteLines.forEach((line) => {
           ensureSpace(5);
-          pdf.text(`  ${line.trim()}`, MARGIN, y);
+          pdf.text(`  ${line}`, MARGIN, y);
           y += 5;
         });
       }
