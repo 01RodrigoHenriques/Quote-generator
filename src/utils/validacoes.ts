@@ -8,22 +8,30 @@ export function validarNIF(nif: string): string | null {
   if (!/^\d{9}$/.test(cleaned)) {
     return 'NIF deve ter 9 dígitos';
   }
-  // Portuguese NIF validation algorithm
+  // Portuguese NIF validation - check first digit(s)
   const digits = cleaned.split('').map(Number);
-  const checkDigit = (digits[0] * 9 + digits[1] * 8 + digits[2] * 7 + digits[3] * 6 +
-    digits[4] * 5 + digits[5] * 4 + digits[6] * 3 + digits[7] * 2) % 11;
-  const expected = checkDigit < 2 ? 0 : 11 - checkDigit;
-  if (digits[8] !== expected) {
-    return 'NIF inválido';
-  }
-  // First digit: 1-6 (person), 8 (company), 9 (collective), 45 (non-resident), 70-79 (public)
   const firstTwo = digits[0] * 10 + digits[1];
+
+  // Valid starts: 1-6 (person), 5, 8 (company), 9 (collective)
+  // 45 (non-resident), 70-79 (public/entities)
   const validStarts = [1, 2, 3, 4, 5, 6, 8, 9];
   const validPublic = [70, 71, 72, 73, 74, 75, 76, 77, 78, 79];
   const validNonResident = [45];
+
   if (!validStarts.includes(digits[0]) && !validPublic.includes(firstTwo) && !validNonResident.includes(firstTwo)) {
     return 'NIF inválido';
   }
+
+  // Check digit validation
+  const checkSum = digits[0] * 9 + digits[1] * 8 + digits[2] * 7 + digits[3] * 6 +
+    digits[4] * 5 + digits[5] * 4 + digits[6] * 3 + digits[7] * 2;
+  const checkDigit = checkSum % 11;
+  const expected = checkDigit < 2 ? 0 : 11 - checkDigit;
+
+  if (digits[8] !== expected) {
+    return 'NIF inválido';
+  }
+
   return null;
 }
 

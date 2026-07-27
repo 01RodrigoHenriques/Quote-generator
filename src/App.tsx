@@ -11,6 +11,7 @@ type TabType = 'orcamento' | 'historico';
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('orcamento');
   const [orcamento, setOrcamento] = useState<Orcamento>(criarOrcamentoVazio);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Listen for localStorage changes (from Historico eliminating)
   useEffect(() => {
@@ -23,7 +24,12 @@ function App() {
 
   const handleReabrir = useCallback((orc: Orcamento) => {
     setOrcamento(orc);
+    setValidationErrors({});
     setActiveTab('orcamento');
+  }, []);
+
+  const handleValidate = useCallback((erros: Record<string, string>) => {
+    setValidationErrors(erros);
   }, []);
 
   return (
@@ -68,7 +74,11 @@ function App() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Form - first on mobile, left on desktop */}
               <div>
-                <FormularioOrcamento orcamento={orcamento} onChange={setOrcamento} />
+                <FormularioOrcamento
+                  orcamento={orcamento}
+                  onChange={setOrcamento}
+                  onValidate={handleValidate}
+                />
               </div>
 
               {/* Preview - second on mobile, right on desktop */}
@@ -81,7 +91,7 @@ function App() {
 
             {/* Export bar - sticky bottom */}
             <div className="sticky bottom-0 bg-paper/95 border-t-2 border-guide/40 py-3 mt-8 flex justify-center">
-              <ExportPDFButton orcamento={orcamento} />
+              <ExportPDFButton orcamento={orcamento} onValidate={handleValidate} />
             </div>
           </>
         )}

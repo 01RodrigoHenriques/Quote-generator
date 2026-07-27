@@ -1,9 +1,11 @@
 import React, { useCallback } from 'react';
 import type { Orcamento, ItemOrcamento, DadosEmpresa, DadosCliente } from '../types/orcamento';
+import { validarNIF, validarEmail, validarCampoObrigatorio } from '../utils/validacoes';
 
 interface FormularioOrcamentoProps {
   orcamento: Orcamento;
   onChange: (orcamento: Orcamento) => void;
+  onValidate?: (erros: Record<string, string>) => void;
 }
 
 function SectionNumber({ num }: { num: string }) {
@@ -18,15 +20,23 @@ function InputField({
   label,
   value,
   onChange,
+  onBlur,
+  error,
   type = 'text',
   placeholder = '',
+  validate,
 }: {
   label: string;
   value: string | number;
   onChange: (val: string) => void;
+  onBlur?: () => void;
+  error?: string;
   type?: string;
   placeholder?: string;
+  validate?: (val: string) => string | null;
 }) {
+  const hasError = !!error;
+
   return (
     <div className="mb-4">
       <label className="block text-xs font-mono uppercase tracking-wider text-guide mb-1">
@@ -36,9 +46,23 @@ function InputField({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={() => {
+          onBlur?.();
+          if (validate && typeof value === 'string') {
+            validate(value);
+          }
+        }}
         placeholder={placeholder}
-        className="w-full bg-transparent border-b-2 border-guide/40 focus:border-blueprint outline-none py-1 text-ink font-sans transition-colors duration-200"
+        className={`
+          w-full bg-transparent border-b-2 outline-none py-1 text-ink font-sans transition-colors duration-200
+          ${hasError
+            ? 'border-stamp focus:border-stamp'
+            : 'border-guide/40 focus:border-blueprint'}
+        `}
       />
+      {hasError && (
+        <p className="text-xs text-stamp font-mono mt-1" role="alert">{error}</p>
+      )}
     </div>
   );
 }
@@ -46,9 +70,11 @@ function InputField({
 function EmpresaSection({
   empresa,
   onChange,
+  erros = {},
 }: {
   empresa: DadosEmpresa;
   onChange: (empresa: DadosEmpresa) => void;
+  erros?: Record<string, string>;
 }) {
   const handleLogoUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +89,18 @@ function EmpresaSection({
     [empresa, onChange]
   );
 
+  const validateNIF = (val: string) => {
+    const err = validarNIF(val);
+    if (err) onChange({ ...empresa, nif: val });
+    return err;
+  };
+
+  const validateEmail = (val: string) => {
+    const err = validarEmail(val);
+    if (err) onChange({ ...empresa, email: val });
+    return err;
+  };
+
   return (
     <section className="mb-8">
       <h2 className="font-mono text-lg uppercase tracking-wide text-ink mb-4 flex items-center">
@@ -75,12 +113,19 @@ function EmpresaSection({
           value={empresa.nome}
           onChange={(val) => onChange({ ...empresa, nome: val })}
           placeholder="Ex: Construções Silva, Lda."
+          error={erros['empresa.nome']}
         />
         <InputField
           label="NIF"
           value={empresa.nif || ''}
           onChange={(val) => onChange({ ...empresa, nif: val })}
           placeholder="Ex: 501234567"
+          error={erros['empresa.nif']}
+          validate={(val) => {
+            const err = validarNIF(val);
+            if (err) onChange({ ...empresa, nif: val });
+            return err;
+          }}
         />
         <InputField
           label="Morada"
@@ -99,6 +144,7 @@ function EmpresaSection({
           value={empresa.email || ''}
           onChange={(val) => onChange({ ...empresa, email: val })}
           placeholder="Ex: geral@construcoes-silva.pt"
+          error={erros['empresa.email']}
         />
         <div className="mb-4">
           <label className="block text-xs font-mono uppercase tracking-wider text-guide mb-1">
@@ -133,9 +179,11 @@ function EmpresaSection({
 function ClienteSection({
   cliente,
   onChange,
+  erros = {},
 }: {
   cliente: DadosCliente;
   onChange: (cliente: DadosCliente) => void;
+  erros?: Record<string, string>;
 }) {
   return (
     <section className="mb-8">
@@ -149,12 +197,14 @@ function ClienteSection({
           value={cliente.nome}
           onChange={(val) => onChange({ ...cliente, nome: val })}
           placeholder="Ex: João Santos"
+          error={erros['cliente.nome']}
         />
         <InputField
           label="NIF"
           value={cliente.nif || ''}
           onChange={(val) => onChange({ ...cliente, nif: val })}
           placeholder="Ex: 123456789"
+          error={erros['cliente.nif']}
         />
         <InputField
           label="Morada"
@@ -167,6 +217,7 @@ function ClienteSection({
           value={cliente.email || ''}
           onChange={(val) => onChange({ ...cliente, email: val })}
           placeholder="Ex: joao.santos@email.pt"
+          error={erros['cliente.email']}
         />
       </div>
     </section>
@@ -180,6 +231,7 @@ function ItensSection({
   onItensChange,
   onCustoMateriaisChange,
   onMargemChange,
+  erros = {},
 }: {
   itens: ItemOrcamento[];
   custoMateriais: number;
@@ -187,6 +239,7 @@ function ItensSection({
   onItensChange: (itens: ItemOrcamento[]) => void;
   onCustoMateriaisChange: (val: number) => void;
   onMargemChange: (val: number) => void;
+  erros?: Record<string, string>;
 }) {
   const addItem = () => {
     const newItem: ItemOrcamento = {
@@ -221,6 +274,10 @@ function ItensSection({
         Itens do Orçamento
       </h2>
 
+      {erros['itens'] && (
+        <p className="text-xs text-stamp font-mono mb-3" role="alert">{erros['itens']}</p>
+      )}
+
       {/* Table header */}
       <div className="hidden md:grid grid-cols-12 gap-2 pb-2 border-b-2 border-guide/40 font-mono text-xs uppercase tracking-wider text-guide">
         <div className="col-span-5">Descrição</div>
@@ -231,8 +288,12 @@ function ItensSection({
       </div>
 
       {/* Rows */}
-      {itens.map((item) => {
+      {itens.map((item, idx) => {
         const subtotal = item.quantidade * item.precoUnitario;
+        const descError = erros[`item-${idx}-descricao`];
+        const qtdError = erros[`item-${idx}-quantidade`];
+        const precoError = erros[`item-${idx}-preco`];
+
         return (
           <div
             key={item.id}
@@ -248,8 +309,14 @@ function ItensSection({
                 value={item.descricao}
                 onChange={(e) => updateItem(item.id, 'descricao', e.target.value)}
                 placeholder="Ex: Fornecimento e instalação de..."
-                className="w-full bg-transparent border-b border-guide/30 focus:border-blueprint outline-none py-1 text-ink font-sans transition-colors duration-200"
+                className={`
+                  w-full bg-transparent border-b outline-none py-1 text-ink font-sans transition-colors duration-200
+                  ${descError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}
+                `}
               />
+              {descError && (
+                <p className="text-xs text-stamp font-mono mt-1" role="alert">{descError}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <span className="md:hidden text-xs font-mono text-guide uppercase tracking-wider block mb-1">
@@ -263,8 +330,14 @@ function ItensSection({
                 onChange={(e) =>
                   updateItem(item.id, 'quantidade', parseFloat(e.target.value) || 0)
                 }
-                className="w-full bg-transparent border-b border-guide/30 focus:border-blueprint outline-none py-1 text-ink font-mono text-right transition-colors duration-200"
+                className={`
+                  w-full bg-transparent border-b outline-none py-1 text-ink font-mono text-right transition-colors duration-200
+                  ${qtdError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}
+                `}
               />
+              {qtdError && (
+                <p className="text-xs text-stamp font-mono mt-1" role="alert">{qtdError}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <span className="md:hidden text-xs font-mono text-guide uppercase tracking-wider block mb-1">
@@ -278,8 +351,14 @@ function ItensSection({
                 onChange={(e) =>
                   updateItem(item.id, 'precoUnitario', parseFloat(e.target.value) || 0)
                 }
-                className="w-full bg-transparent border-b border-guide/30 focus:border-blueprint outline-none py-1 text-ink font-mono text-right transition-colors duration-200"
+                className={`
+                  w-full bg-transparent border-b outline-none py-1 text-ink font-mono text-right transition-colors duration-200
+                  ${precoError ? 'border-stamp focus:border-stamp' : 'border-guide/30 focus:border-blueprint'}
+                `}
               />
+              {precoError && (
+                <p className="text-xs text-stamp font-mono mt-1" role="alert">{precoError}</p>
+              )}
             </div>
             <div className="md:col-span-2 text-right font-mono text-ink">
               <span className="md:hidden text-xs font-mono text-guide uppercase tracking-wider block mb-1">
@@ -350,16 +429,29 @@ function ItensSection({
   );
 }
 
-export default function FormularioOrcamento({ orcamento, onChange }: FormularioOrcamentoProps) {
+export default function FormularioOrcamento({ orcamento, onChange, onValidate }: FormularioOrcamentoProps) {
+  const handleValidate = useCallback(() => {
+    const { validarOrcamento } = require('../utils/validacoes');
+    const result = validarOrcamento(
+      orcamento.empresa,
+      orcamento.cliente,
+      orcamento.itens
+    );
+    onChange({ ...orcamento, erros: result.errors });
+    onValidate?.(result.errors);
+  }, [orcamento, onChange, onValidate]);
+
   return (
     <div>
       <EmpresaSection
         empresa={orcamento.empresa}
         onChange={(empresa) => onChange({ ...orcamento, empresa })}
+        erros={orcamento.erros}
       />
       <ClienteSection
         cliente={orcamento.cliente}
         onChange={(cliente) => onChange({ ...orcamento, cliente })}
+        erros={orcamento.erros}
       />
       <ItensSection
         itens={orcamento.itens}
@@ -368,11 +460,21 @@ export default function FormularioOrcamento({ orcamento, onChange }: FormularioO
         onItensChange={(itens) => onChange({ ...orcamento, itens })}
         onCustoMateriaisChange={(val) => onChange({ ...orcamento, custoMateriais: val })}
         onMargemChange={(val) => onChange({ ...orcamento, margemPercentagem: val })}
+        erros={orcamento.erros}
       />
       <NotasSection
         notas={orcamento.notas || ''}
         onChange={(notas) => onChange({ ...orcamento, notas })}
       />
+      {/* Validation trigger */}
+      <div className="mb-4">
+        <button
+          onClick={handleValidate}
+          className="text-blueprint font-mono text-sm underline underline-offset-4 hover:text-ink transition-colors duration-200"
+        >
+          ✓ Validar formulário
+        </button>
+      </div>
     </div>
   );
 }

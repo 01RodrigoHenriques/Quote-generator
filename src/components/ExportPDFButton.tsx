@@ -3,9 +3,11 @@ import jsPDF from 'jspdf';
 import type { Orcamento } from '../types/orcamento';
 import { calcularSubtotalItens, calcularTotalFinal } from '../utils/calculos';
 import { guardarOrcamento } from '../utils/localStorage';
+import { validarOrcamento } from '../utils/validacoes';
 
 interface ExportPDFButtonProps {
   orcamento: Orcamento;
+  onValidate?: (erros: Record<string, string>) => void;
 }
 
 // A4 dimensions in mm
@@ -38,16 +40,21 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-export default function ExportPDFButton({ orcamento }: ExportPDFButtonProps) {
+export default function ExportPDFButton({ orcamento, onValidate }: ExportPDFButtonProps) {
   const [loading, setLoading] = useState(false);
 
-  const isValid =
-    orcamento.empresa.nome.trim() !== '' &&
-    orcamento.cliente.nome.trim() !== '' &&
-    orcamento.itens.length > 0;
+  const validationResult = validarOrcamento(
+    orcamento.empresa,
+    orcamento.cliente,
+    orcamento.itens
+  );
+  const isValid = validationResult.isValid;
 
   const handleExport = async () => {
-    if (!isValid) return;
+    if (!isValid) {
+      onValidate?.(validationResult.errors);
+      return;
+    }
     setLoading(true);
     try {
       guardarOrcamento(orcamento);
@@ -330,10 +337,8 @@ export default function ExportPDFButton({ orcamento }: ExportPDFButtonProps) {
         {loading ? 'A gerar PDF...' : 'Exportar PDF'}
       </button>
       {!isValid && (
-        <p className="text-xs text-guide font-mono">
-          {!orcamento.empresa.nome.trim() && 'Preenche o nome da empresa. '}
-          {!orcamento.cliente.nome.trim() && 'Preenche o nome do cliente. '}
-          {orcamento.itens.length === 0 && 'Adiciona pelo menos um item.'}
+        <p className="text-xs text-stamp font-mono text-center max-w-md">
+          {Object.values(validationResult.errors).join('. ')}
         </p>
       )}
     </div>
