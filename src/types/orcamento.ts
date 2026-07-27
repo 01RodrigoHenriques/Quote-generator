@@ -32,4 +32,5 @@ export interface Orcamento {
   custoMateriais: number;
   margemPercentagem: number;
   notas?: string;
+  erros?: Record<string, string>;
 }
