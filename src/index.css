@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base paper background with subtle texture */
+body {
+  background-color: #F7F5F0;
+  color: #1A1D1E;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(138, 133, 128, 0.06) 27px,
+      rgba(138, 133, 128, 0.06) 28px
+    );
+}
+
+#root {
+  max-width: 100%;
+  min-height: 100svh;
+}
+
+/* Stamp double border */
+.stamp-border {
+  border: 3px double #2B4C7E;
+}
+
+/* Focus style for inputs */
+input:focus {
+  outline: none;
+}
+
+/* Subtle transition for all interactive elements */
+button, input, a {
+  transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease, opacity 200ms ease;
+}
+
+/* Remove number input spinners for cleaner look */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
