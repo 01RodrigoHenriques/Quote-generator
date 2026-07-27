@@ -12,7 +12,7 @@
 
 ## Demo
 
-[▶ Ver demo em vídeo](preview%20MP4/live.mp4) — faz download e abre no browser.
+[▶ Ver demo em vídeo](preview%20MP4/live.mp4)
 
 ---
 
