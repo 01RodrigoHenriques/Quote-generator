@@ -12,7 +12,7 @@
 
 ## Demo
 
-<video src="preview%20MP4/live.mp4" controls muted playsinline></video>
+[▶ Ver demo em vídeo](preview%20MP4/live.mp4)
 
 ---
 
